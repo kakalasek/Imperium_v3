@@ -2,10 +2,10 @@
 
 # Imports #
 from flask import Flask, render_template, url_for, redirect, request
-from forms import ScanForm
-from models import db, Scan
-from flask_config import ApplicationConfig
-from config import read_config
+from Flask_app.src.forms import ScanForm
+from Flask_app.src.models import db, Scan
+from Flask_app.src.flask_config import ApplicationConfig
+from Flask_app.src.config import read_config
 import json
 import requests
 
