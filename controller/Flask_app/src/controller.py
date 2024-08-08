@@ -16,6 +16,9 @@ db.init_app(app)
 
 config_data = read_config()
 
+with app.app_context():
+    db.create_all()
+
 # Global variables #
 scans = [] 
 endpoints = {
