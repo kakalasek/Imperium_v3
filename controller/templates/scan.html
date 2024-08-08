@@ -1,0 +1,33 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row gx-2">
+        <div class="col">
+            <h3>Hosts</h3>
+            <div class="d-flex flex-column border border-dark rounded vh-100 overflow-auto p-2">
+                <!-- Hosts -->
+                {% if scan_json %}
+                    {% if scan_json['host'] is mapping %}
+                        {% if "@addr" in scan_json['host']['address'] %}
+                            <a href="{{ url_for('host') }}?host_ip={{ scan_json['host']['address']['@addr'] }}&scan_id={{ scan_id }}"> {{ scan_json['host']['address']['@addr'] }} </a>
+                        {% else %}
+                            <a href="{{ url_for('host') }}?host_ip={{ scan_json['host']['address'][0]['@addr'] }}&scan_id={{ scan_id }}"> {{ scan_json['host']['address'][0]['@addr'] }} </a>
+                        {% endif %}
+                    {% else %}
+                        {% for host in scan_json['host'] %}
+                            {% if "@addr" in host['address'] %}
+                                <a href="{{ url_for('host') }}?host_ip={{ host['address']['@addr'] }}&scan_id={{ scan_id }}"> {{ host['address']['@addr'] }} </a>
+                            {% else %}
+                                <a href="{{ url_for('host') }}?host_ip={{ host['address'][0]['@addr'] }}&scan_id={{ scan_id }}"> {{ host['address'][0]['@addr'] }} </a>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        <div class="col">
+            <button class="btn btn-primary"><a href="{{ url_for('show_json') }}?scan_id={{ scan_id }}" class="link-light">View JSON</a></button>
+        </div>
+    </div>
+</div>
+{% endblock %}

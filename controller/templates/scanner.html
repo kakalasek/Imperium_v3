@@ -1,0 +1,68 @@
+{% extends 'layout.html' %} 
+{% block content %} 
+
+  {% if not endpoint_set %}
+
+    <div class="h1">Endpoint not set</div>
+    
+  {% else %}
+
+    <div class="container-fluid">
+      <div class="row gx-2">
+        <div class="col">
+          <!-- Scan Form-->
+           <form method="post">
+            {{ scanform.hidden_tag() }}
+            <div class="d-flex flex-column gap-2">
+              <div class="form-floating">
+                {{ scanform.ip(class="form-control") }}
+                {{ scanform.ip.label }} 
+              </div>
+              <div class="form-floating">
+                {{ scanform.scan_type(class="form-select") }}
+                {{ scanform.scan_type.label }} 
+              </div>
+              <div class="d-flex gap-2">
+                {{ scanform.no_ping.label }} 
+                {{ scanform.no_ping(class="form-check") }}
+              </div>
+              <div class="d-flex gap-2">
+                {{ scanform.randomize_hosts.label }} 
+                {{ scanform.randomize_hosts(class="form-check") }}
+              </div>
+              <div class="d-flex gap-2">
+                {{ scanform.fragment_packets.label }} 
+                {{ scanform.fragment_packets(class="form-check") }}
+              </div>
+              <div>
+                {{ scanform.submit(class='btn btn-secondary btn-lg')}}
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="col">
+          <div class="container-fluid p-2 border border-dark rounded">
+            <div class="row pb-2">
+              <div class="col">
+                <button class="btn btn-primary" onclick="window.location.reload()">Refresh Database</button>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col">
+                <div class="d-flex flex-column border border-dark rounded vh-100 overflow-auto p-2 gap-1">
+                  <!-- Scans -->
+                  {% for scan in scans %}
+                    <div>
+                      <a href="{{ url_for('scan') }}?scan_id={{ scan['id'] }}">{{scan["name"]}} {{scan["target"]}}</a>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  {% endif %}
+{% endblock %}
