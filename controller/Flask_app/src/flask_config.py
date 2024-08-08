@@ -1,4 +1,4 @@
-from Flask_app.src.config import read_config
+from config import read_config
 
 config_data = read_config()
 

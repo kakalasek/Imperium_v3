@@ -2,10 +2,10 @@
 
 # Imports #
 from flask import Flask, render_template, url_for, redirect, request
-from Flask_app.src.forms import ScanForm
-from Flask_app.src.models import db, Scan
-from Flask_app.src.flask_config import ApplicationConfig
-from Flask_app.src.config import read_config
+from forms import ScanForm
+from models import db, Scan
+from flask_config import ApplicationConfig
+from config import read_config
 import json
 import requests
 
@@ -45,51 +45,54 @@ def home():
 # The scanner route
 @app.route("/scanner", methods=['GET', 'POST'])
 def scanner():
-
-    test = requests.get(f"{endpoints['scanner']}/@test")
-
-    # Loading the forms
-    scanform = ScanForm()
-
-    if test.status_code == 200:
-        endpoint_set = True
-
-        get_scans()    
-
-        # Returns for POST requests
-        if request.method == 'POST' and scanform.validate():    # Scan has been initiated
-            options = scanform.scan_type.data
-            scan_name = 'Scan'
-
-            match options:
-                case '-sS':
-                    scan_name = 'SYN Scan'
-                case '-sV':
-                    scan_name = 'Version Scan'
-                case '-O':
-                    scan_name = 'System Scan'
-                case '-sF':
-                    scan_name = 'Fin Scan'
-                case '-sU':
-                    scan_name = 'UDP Scan'
-                case '-sT':
-                    scan_name = 'Connect Scan'
-
-            if scanform.no_ping.data:
-                options += " -Pn"
-            if scanform.randomize_hosts.data:
-                options += " --randomize-hosts"
-            if scanform.fragment_packets.data:
-                options += " -f"
-
-            requests.post(f"{endpoints["scanner"]}/@scan?range={scanform.ip.data}&options={options}&scan_type={scan_name}")
-            return redirect(url_for("scanner"))
-    
-    else:
+    try:
         endpoint_set = False
 
-    # Default template return for GET requests
-    return render_template('scanner.html', scanform=scanform, endpoint_set=endpoint_set, scans=scans)
+        test = requests.get(f"{endpoints['scanner']}/@test")
+
+        # Loading the forms
+        scanform = ScanForm()
+
+        if test.status_code == 200:
+            endpoint_set = True
+
+            get_scans()    
+
+            # Returns for POST requests
+            if request.method == 'POST' and scanform.validate():    # Scan has been initiated
+                options = scanform.scan_type.data
+                scan_name = 'Scan'
+
+                match options:
+                    case '-sS':
+                        scan_name = 'SYN Scan'
+                    case '-sV':
+                        scan_name = 'Version Scan'
+                    case '-O':
+                        scan_name = 'System Scan'
+                    case '-sF':
+                        scan_name = 'Fin Scan'
+                    case '-sU':
+                        scan_name = 'UDP Scan'
+                    case '-sT':
+                        scan_name = 'Connect Scan'
+
+                if scanform.no_ping.data:
+                    options += " -Pn"
+                if scanform.randomize_hosts.data:
+                    options += " --randomize-hosts"
+                if scanform.fragment_packets.data:
+                    options += " -f"
+
+                requests.post(f"{endpoints["scanner"]}/@scan?range={scanform.ip.data}&options={options}&scan_type={scan_name}")
+                return redirect(url_for("scanner"))
+        
+        # Default template return for GET requests
+        return render_template('scanner.html', scanform=scanform, endpoint_set=endpoint_set, scans=scans)
+
+    except:
+        return render_template('scanner.html', endpoint_set=endpoint_set)
+
 
 # The scan route
 @app.route("/scanner/scan")
@@ -220,4 +223,4 @@ def social_engineering():
 """
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
