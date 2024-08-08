@@ -38,6 +38,11 @@ def get_scans():    # Used to retrieve scans from the database
 
 # Routes #
 
+# Here to handle the 404 error, dont need to log that, so the default Flask errorhandler will do
+@app.errorhandler(404)
+def not_found(e):
+    return render_template('404.html')
+
 # Home route ## So far unused
 @app.route("/")
 @app.route("/home")
