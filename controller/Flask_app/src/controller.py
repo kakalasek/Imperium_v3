@@ -158,7 +158,7 @@ def host():
         
         if host_ip == None: # If no host_ip is provided, this page raises an exception
             raise requests.exceptions.RequestException("Invalid Host IP")
-
+        
         for entry in scans: # Looking through scans for scan with the id
             if entry["id"] == int(scan_id): # There right scan was found
                 scan_json = json.loads(entry["scan_json"])
@@ -180,8 +180,8 @@ def host():
                             break
                 break
 
-            if not host_json:   # If provided scan id was not found, this page raises an exception
-                raise requests.exceptions.RequestException("Invalid Scan ID or Host IP")
+        if not host_json:   # If provided scan id was not found, this page raises an exception
+            raise requests.exceptions.RequestException("Invalid Scan ID or Host IP")
 
         return render_template('host.html', data=host_json, without_mac=without_mac, scan_id =scan_id, host_ip=host_ip), 200
     

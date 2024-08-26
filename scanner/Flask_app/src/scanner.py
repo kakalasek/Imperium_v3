@@ -3,16 +3,17 @@ from models import db, Scan
 import subprocess
 import json
 import xmltodict
+import os
 from celery import shared_task
 from util import celery_init_app
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "73eeac3fa1a0ce48f381ca1e6d71f077"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////home/pipa/Personal/Projects/Imperium/v2/controller/instance/db.sqlite3'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URI']
 app.config.from_mapping(
     CELERY=dict(
-        broker_url="redis://localhost",
-        result_backend="redis://localhost",
+        broker_url="redis://redis",
+        result_backend="redis://redis",
         task_ignore_results=True,
     ),
 )
@@ -23,7 +24,7 @@ celery_app = celery_init_app(app)
 @shared_task()
 def add_scan(options, range, scan_type) -> None:
     
-    xml_content = subprocess.getoutput(f"sudo nmap -oX - {options} {range}")
+    xml_content = subprocess.getoutput(f"nmap -oX - {options} {range}")
     data_dict = xmltodict.parse(xml_content)
 
     json_output = data_dict['nmaprun']
@@ -51,4 +52,4 @@ def scan():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True, port=3001)
+    app.run(debug=True, port=3001, host="0.0.0.0")
