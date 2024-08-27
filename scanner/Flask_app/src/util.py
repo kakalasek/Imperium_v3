@@ -1,3 +1,4 @@
+# This file containes init function for Celery
 from celery import Celery, Task
 from flask import Flask
 

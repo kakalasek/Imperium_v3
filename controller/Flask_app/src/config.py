@@ -1,4 +1,4 @@
-# This class only has a function for 
+# This file only has a function for reading config
 import configparser
 import os
 

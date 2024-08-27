@@ -1,3 +1,4 @@
+# This file contains models of tables for this app
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
