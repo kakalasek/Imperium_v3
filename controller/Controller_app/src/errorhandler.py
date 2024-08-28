@@ -1,6 +1,5 @@
 from flask import render_template
 import logging
-import sys
 
 log_format = '%(asctime)s - %(message)s'
 logging.basicConfig(format=log_format)
