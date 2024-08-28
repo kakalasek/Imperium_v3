@@ -48,9 +48,6 @@
                   {% for scan in scans %}
                     <div>
                       <a href="{{ url_for('scan') }}?scan_id={{ scan['id'] }}">{{scan["name"]}} {{scan["target"]}}</a>
-                      {% if "#text" in scan %}
-                        <label>NOT SUCCEED</label>
-                      {% endif %}
                     </div>
                   {% endfor %}
                 </div>
