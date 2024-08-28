@@ -10,6 +10,9 @@ import json
 import requests
 from errorhandler import handle_error
 from sqlalchemy.exc import OperationalError
+from exceptions import RequestError, EndpointNotSet
+from requests.exceptions import ConnectionError
+from sqlalchemy import text
 
 # Configuration #
 app = Flask(__name__)   # Initializing the flask app
@@ -38,8 +41,12 @@ def get_scans():    # Used to retrieve scans from the database
                     'target': scan.target,
                     'scan_json': scan.scan_json
                 })
-    except Exception as e:  # Probably only database error can arise here, so I am calling every error a database error. Without a database, the app cant work, so this shut down the application
-        r = handle_error("DatabaseError", e)
+
+    except OperationalError as e:
+        r = handle_error(e)
+        return r
+    except Exception as e: 
+        r = handle_error(e)
         return r
 
 # Routes #
@@ -47,7 +54,7 @@ def get_scans():    # Used to retrieve scans from the database
 # Here to handle the 404 error, dont need to log that, so the default Flask errorhandler will do
 @app.errorhandler(404)
 def not_found(e):
-    return render_template('404.html'), 404
+    return render_template('err.html', message='Page Not Found'), 404
 
 # Home route ## So far unused
 @app.route("/")
@@ -105,11 +112,14 @@ def scanner():
         return render_template('scanner.html', scanform=scanform, scans=scans), 200
 
     # Exception handling
-    except requests.exceptions.ConnectionError as e:    # This exception is thrown if endpoint for this extension is not set
-        r = handle_error('EndpointNotSet', e)   # Handling the error
-        return r    # Rendering the output
+    except ConnectionError as e:    # This exception is thrown if endpoint for this extension is not set
+        try:
+            raise EndpointNotSet(f"Endpoint Not Set")  # Just to have that "Endpoint Not Set" in the message
+        except Exception as e:
+            r = handle_error(e)   # Handling the error
+            return r    # Rendering the output
     except Exception as e:  # This is for any other unforseen exception
-        r = handle_error('', e)
+        r = handle_error(e)
         return r
 
 # The scan route
@@ -121,7 +131,7 @@ def scan():
         scan_id = request.args.get('scan_id')
 
         if scan_id == None: # If no scan id is provided, this page raises an exception
-            raise requests.exceptions.RequestException("Invalid Scan ID")
+            raise RequestError("Invalid Scan ID")
 
         scan_json = {}  # JSON for this particular scan will be stored here
 
@@ -133,15 +143,15 @@ def scan():
                 break
         
         if not scan_json:   # If provided scan id was not found, this page raises an exception
-            raise requests.exceptions.RequestException("Invalid Scan ID")
+            raise RequestError("Invalid Scan ID")
 
         return render_template('scan.html', scan_json=scan_json, scan_id=scan_id), 200
     
-    except requests.exceptions.RequestException as e:
-        r = handle_error('RequestException', e)
+    except RequestError as e:
+        r = handle_error(e)
         return r
     except Exception as e:
-        r = handle_error('', e)
+        r = handle_error(e)
         return r
 
 # The host route
@@ -156,10 +166,10 @@ def host():
         host_json = {}
 
         if scan_id == None: # If no scan id is provided, this page raises an exception
-            raise requests.exceptions.RequestException("Invalid Scan ID")
+            raise RequestError("Invalid Scan ID")
         
         if host_ip == None: # If no host_ip is provided, this page raises an exception
-            raise requests.exceptions.RequestException("Invalid Host IP")
+            raise RequestError("Invalid Host IP")
         
         for entry in scans: # Looking through scans for scan with the id
             if entry["id"] == int(scan_id): # There right scan was found
@@ -183,15 +193,15 @@ def host():
                 break
 
         if not host_json:   # If provided scan id was not found, this page raises an exception
-            raise requests.exceptions.RequestException("Invalid Scan ID or Host IP")
+            raise RequestError("Invalid Scan ID or Host IP")
 
         return render_template('host.html', data=host_json, without_mac=without_mac, scan_id =scan_id, host_ip=host_ip), 200
     
-    except requests.exceptions.RequestException as e:
-        r = handle_error('RequestException', e)
+    except RequestError as e:
+        r = handle_error(e)
         return r
     except Exception as e:
-        r = handle_error('', e)
+        r = handle_error(e)
         return r
 
 # The scan JSON route
@@ -205,7 +215,7 @@ def show_json():
         scan_json = {}
 
         if scan_id == None: # If no scan ID was provided, this page raises an exception
-            raise requests.exceptions.RequestException("Invalid Scan ID")
+            raise RequestError("Invalid Scan ID")
 
         if request.args.get('host_ip'): # For JSON of a host
             host_ip = request.args.get('host_ip')
@@ -232,7 +242,7 @@ def show_json():
                     break
 
             if not host_json:   # If an invalid host IP was provided, this page raises an exception
-                raise requests.exceptions.RequestException("Invalid Scan ID or Host IP")
+                raise RequestError("Invalid Scan ID or Host IP")
                 
         else:   # For JSON of a scan
 
@@ -242,13 +252,13 @@ def show_json():
                     return scan_json, 200
                 
             if not scan_json:   # If the scan ID is invalid, thsi page raises an exception
-                raise requests.exceptions.RequestException("Invalid Scan ID")
+                raise RequestError("Invalid Scan ID")
                 
-    except requests.exceptions.RequestException as e:
-        r = handle_error('RequestException', e)
+    except RequestError as e:
+        r = handle_error(e)
         return r
     except Exception as e:
-        r = handle_error('', e)
+        r = handle_error(e)
         return r
 
 
@@ -256,10 +266,10 @@ def show_json():
 if __name__ == '__main__':
     try:    # Checking for database error
         with app.app_context():
-            db.session.commit()
+            db.session.execute(text("SELECT 1"))
 
         app.run(host="0.0.0.0", port=5000, debug=True)
     except OperationalError as e:
-        handle_error("DatabaseError", e)
+        r = handle_error(e)
     except Exception as e:
-        handle_error("", e)
+        r = handle_error(e)
