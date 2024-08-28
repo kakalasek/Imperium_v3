@@ -40,6 +40,7 @@ def get_scans():    # Used to retrieve scans from the database
                 })
     except Exception as e:  # Probably only database error can arise here, so I am calling every error a database error. Without a database, the app cant work, so this shut down the application
         r = handle_error("DatabaseError", e)
+        return r
 
 # Routes #
 
@@ -255,7 +256,7 @@ def show_json():
 if __name__ == '__main__':
     try:    # Checking for database error
         with app.app_context():
-            Scan.query.all()
+            db.session.commit()
 
         app.run(host="0.0.0.0", port=5000, debug=True)
     except OperationalError as e:

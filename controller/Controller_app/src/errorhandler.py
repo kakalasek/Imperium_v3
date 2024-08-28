@@ -14,7 +14,7 @@ def handle_error(code, e):
             return render_template('endpoint_not_set.html'), 402
         case "DatabaseError":
             log.error(f'Database Error\n{e}')
-            sys.exit()
+            return render_template('database_error'), 500
         case "RequestException":
             log.error(f'Request Exception\n{e}')
             return render_template('404.html'), 400 
