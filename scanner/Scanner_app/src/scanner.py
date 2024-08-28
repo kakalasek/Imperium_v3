@@ -40,14 +40,14 @@ def add_scan(options, range, scan_type) -> None:    # This function initiates th
         json_output = data_dict['nmaprun']
         json_output = json.dumps(json_output)   # Convert the dict to JSON
                 
-        new_scan = Scan(name=scan_type, target=range, scan_json=json_output)
+        new_scan = Scan(name=scan_type, target=range, scan_json=json_output)    # Add scan to database
         db.session.add(new_scan)
         db.session.commit()
     
     except OperationalError as e:
-        handle_error('DatabaseError', e)
+        handle_error(e)
     except Exception as e:
-        handle_error('', e)
+        handle_error(e)
 
 @app.route("/@test")    # This route is used to test if the scanner is alive and functional
 def test():
@@ -73,9 +73,9 @@ def scan():
 
         return '', 201
     except ParameterException as e:
-        handle_error("ParameterException", e)
+        handle_error(e)
     except Exception as e:
-        handle_error("", e)
+        handle_error(e)
 
 
 # App starts #
@@ -85,6 +85,6 @@ if __name__ == '__main__':
             db.create_all() # Create the tables
         app.run(debug=True, port=3001, host="0.0.0.0") # Start the application
     except OperationalError as e:
-        handle_error("DatabaseError", e)
+        handle_error(e)
     except Exception as e:
-        handle_error("", e)
+        handle_error(e)
