@@ -9,6 +9,9 @@ log.setLevel(logging.INFO)
 
 def handle_error(code, e):
     match code:
+        case "ParameterException":
+            log.error(f'Parameter Exception\n{e}')
+        case "DatabaseError":
+            log.error(f'Database Error\n{e}')
         case _:
             log.error(f'Unknown Error\n{e}')
-            return render_template('unkown_exception'), 500

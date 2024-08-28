@@ -7,6 +7,9 @@ import xmltodict
 import os
 from celery import shared_task
 from util import celery_init_app
+from sqlalchemy.exc import OperationalError
+from errorhandler import handle_error
+from exceptions import ParameterException
 
 # App config #
 app = Flask(__name__)
@@ -27,16 +30,24 @@ celery_app = celery_init_app(app)
 
 @shared_task()
 def add_scan(options, range, scan_type) -> None:    # This function initiates the scan and writes its output to the database
+    try:
+        with app.app_context():
+            Scan.query.all()
     
-    xml_content = subprocess.getoutput(f"nmap -oX - {options} {range}") # Run the scan and create an XML
-    data_dict = xmltodict.parse(xml_content)    # Convert the XML to dict
+        xml_content = subprocess.getoutput(f"nmap -oX - {options} {range}") # Run the scan and create an XML
+        data_dict = xmltodict.parse(xml_content)    # Convert the XML to dict
 
-    json_output = data_dict['nmaprun']
-    json_output = json.dumps(json_output)   # Convert the dict to JSON
-            
-    new_scan = Scan(name=scan_type, target=range, scan_json=json_output)
-    db.session.add(new_scan)
-    db.session.commit()
+        json_output = data_dict['nmaprun']
+        json_output = json.dumps(json_output)   # Convert the dict to JSON
+                
+        new_scan = Scan(name=scan_type, target=range, scan_json=json_output)
+        db.session.add(new_scan)
+        db.session.commit()
+    
+    except OperationalError as e:
+        handle_error('DatabaseError', e)
+    except Exception as e:
+        handle_error('', e)
 
 @app.route("/@test")    # This route is used to test if the scanner is alive and functional
 def test():
@@ -44,17 +55,36 @@ def test():
 
 @app.route("/@scan", methods=["POST"])  # This route is used to start the scan
 def scan():
-    options = request.args.get('options')   # Get the option of the scan
-    range = request.args.get('range')   # Get the range of the scan
-    scan_type = request.args.get('scan_type')   # Get the scan type
+    try:
+        if 'options' not in request.args:
+            raise ParameterException("Options parameter is missing from the request")
+        
+        if 'range' not in request.args:
+            raise ParameterException("Range parameter is missing from the request")
+        
+        if 'scan_type' not in request.args:
+            raise ParameterException("Scan type parameter is missing from the request")
 
-    add_scan.delay(options, range, scan_type)   # Call Celery to execute and add the scan
+        options = request.args.get('options')   # Get the options of the scan
+        range = request.args.get('range')   # Get the range of the scan
+        scan_type = request.args.get('scan_type')   # Get the scan type
 
-    return '', 201
+        add_scan.delay(options, range, scan_type)   # Call Celery to execute and add the scan
+
+        return '', 201
+    except ParameterException as e:
+        handle_error("ParameterException", e)
+    except Exception as e:
+        handle_error("", e)
 
 
 # App starts #
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all() # Create the tables
-    app.run(debug=True, port=3001, host="0.0.0.0") # Start the application
+    try:
+        with app.app_context():
+            db.create_all() # Create the tables
+        app.run(debug=True, port=3001, host="0.0.0.0") # Start the application
+    except OperationalError as e:
+        handle_error("DatabaseError", e)
+    except Exception as e:
+        handle_error("", e)

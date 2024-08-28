@@ -1,7 +1,7 @@
 # This file is the main entrypoint of this app. It contains all the routes #
 
 # Imports #
-from flask import Flask, render_template, url_for, redirect, request, abort
+from flask import Flask, render_template, url_for, redirect, request
 from forms import ScanForm
 from models import db, Scan
 from flask_config import ApplicationConfig
@@ -9,6 +9,7 @@ from config import read_config
 import json
 import requests
 from errorhandler import handle_error
+from sqlalchemy.exc import OperationalError
 
 # Configuration #
 app = Flask(__name__)   # Initializing the flask app
@@ -252,4 +253,12 @@ def show_json():
 
 # The start of the program
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    try:    # Checking for database error
+        with app.app_context():
+            Scan.query.all()
+
+        app.run(host="0.0.0.0", port=5000, debug=True)
+    except OperationalError as e:
+        handle_error("DatabaseError", e)
+    except Exception as e:
+        handle_error("", e)
